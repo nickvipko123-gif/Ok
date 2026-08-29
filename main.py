@@ -27,7 +27,6 @@ def keep_alive():
 # ==============================
 # 2. CẤU HÌNH BOT & MÃ EMOJI PREMIUM
 # ==============================
-# Ưu tiên lấy Token từ Environment Variable của Render, nếu không có sẽ lấy token mặc định
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "8906024187:AAHu8y2bf8WaZ55twhJz7rWld-jaolN3rgk")
 bot = telebot.TeleBot(BOT_TOKEN, parse_mode="HTML")
 
@@ -112,13 +111,14 @@ def downfb(message):
         "<b>Chọn chất lượng bên dưới để tải.</b>"
     )
 
-    # INLINE KEYBOARD
+    # INLINE KEYBOARD (ĐÃ SỬA LỖI CÚ PHÁP Ở ĐÂY)
     keyboard = types.InlineKeyboardMarkup()
-    hd_button_url = hd_url if hd_url else sd_button_url = sd_url if sd_url else hd_url
+    hd_button_url = hd_url if hd_url else sd_url
+    sd_button_url = sd_url if sd_url else hd_url
 
     keyboard.row(
-        types.InlineKeyboardButton(f"🎥 Tải HD", url=hd_button_url),
-        types.InlineKeyboardButton(f"🎥 Tải SD", url=sd_button_url)
+        types.InlineKeyboardButton("🎥 Tải HD", url=hd_button_url),
+        types.InlineKeyboardButton("🎥 Tải SD", url=sd_button_url)
     )
 
     # KIỂM TRA DUNG LƯỢNG VIDEO
