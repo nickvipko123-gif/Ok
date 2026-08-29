@@ -36,9 +36,30 @@ EMOJI_WARN  = '<tg-emoji emoji-id="5368324170671202291">⚠️</tg-emoji>'
 EMOJI_CROSS = '<tg-emoji emoji-id="5368324170671202292">❌</tg-emoji>'
 EMOJI_CHECK = '<tg-emoji emoji-id="5368324170671202289">✅</tg-emoji>'
 EMOJI_VIDEO = '<tg-emoji emoji-id="5368324170671202287">🎥</tg-emoji>'
+EMOJI_STAR  = '<tg-emoji emoji-id="5368324170671202290">⭐</tg-emoji>'
 
 # ==============================
-# 3. LỆNH /DOWNFB
+# 3. LỆNH /START (BỔ SUNG MỚI)
+# ==============================
+@bot.message_handler(commands=["start"])
+def start_command(message):
+    user_name = html.escape(message.from_user.first_name)
+    welcome_msg = (
+        f"{EMOJI_STAR} <b>XIN CHÀO {user_name.upper()}!</b>\n"
+        "<code>─────────────────────────</code>\n"
+        "Chào mừng bạn đến với <b>Bot Tải Video Facebook 24/7</b>.\n\n"
+        "🚀 <b>CÁCH SỬ DỤNG:</b>\n"
+        "Gửi lệnh theo cú pháp:\n"
+        "<code>/downfb [Link Facebook]</code>\n\n"
+        "📌 <b>Ví dụ:</b>\n"
+        "<code>/downfb https://www.facebook.com/watch/?v=123456789</code>\n"
+        "<code>─────────────────────────</code>\n"
+        "✨ <i>Chúc bạn có trải nghiệm tuyệt vời!</i>"
+    )
+    bot.reply_to(message, welcome_msg, parse_mode="HTML")
+
+# ==============================
+# 4. LỆNH /DOWNFB
 # ==============================
 @bot.message_handler(commands=["downfb"])
 def downfb(message):
@@ -111,7 +132,7 @@ def downfb(message):
         "<b>Chọn chất lượng bên dưới để tải.</b>"
     )
 
-    # INLINE KEYBOARD (ĐÃ SỬA LỖI CÚ PHÁP Ở ĐÂY)
+    # INLINE KEYBOARD
     keyboard = types.InlineKeyboardMarkup()
     hd_button_url = hd_url if hd_url else sd_url
     sd_button_url = sd_url if sd_url else hd_url
@@ -161,7 +182,7 @@ def downfb(message):
 
 
 # ==============================
-# 4. CHẠY CHƯƠNG TRÌNH
+# 5. CHẠY CHƯƠNG TRÌNH
 # ==============================
 if __name__ == "__main__":
     # Khởi chạy Web Server ngầm cho Render
