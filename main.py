@@ -27,7 +27,7 @@ def keep_alive():
 # ==============================
 # 2. CẤU HÌNH BOT & EMOJI ĐỘNG PREMIUM
 # ==============================
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "8906024187:AAFxBmmyWfpugt92eqpuyMCn2c8eGHmfIy0")
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "8906024187:AAGf_VqH8JGuJWZPRei5kYuuqzo86CkjuJQ")
 bot = telebot.TeleBot(BOT_TOKEN, parse_mode="HTML")
 
 # Khai báo Emoji Động (Custom Emoji) đúng cú pháp HTML
