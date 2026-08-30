@@ -27,7 +27,7 @@ def keep_alive():
 # ==============================
 # 2. CẤU HÌNH BOT & EMOJI CHUẨN
 # ==============================
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "8906024187:AAHu8y2bf8WaZ55twhJz7rWld-jaolN3rgk")
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "8906024187:AAFxBmmyWfpugt92eqpuyMCn2c8eGHmfIy0")
 bot = telebot.TeleBot(BOT_TOKEN, parse_mode="HTML")
 
 # Dùng Emoji tiêu chuẩn để đảm bảo Telegram API tiếp nhận 100%
