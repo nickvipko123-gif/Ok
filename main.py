@@ -7,7 +7,7 @@ from telebot import types
 from flask import Flask
 
 # ==============================
-# 1. TẠO WEB SERVER ĐỂ KEEP-ALIVE TRÊN RENDER
+# 1. TẠO WEB SERVER KEEP-ALIVE TRÊN RENDER
 # ==============================
 app = Flask('')
 
@@ -25,18 +25,18 @@ def keep_alive():
     t.start()
 
 # ==============================
-# 2. CẤU HÌNH BOT & EMOJI CHUẨN
+# 2. CẤU HÌNH BOT & EMOJI ĐỘNG PREMIUM
 # ==============================
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "8906024187:AAFxBmmyWfpugt92eqpuyMCn2c8eGHmfIy0")
 bot = telebot.TeleBot(BOT_TOKEN, parse_mode="HTML")
 
-# Dùng Emoji tiêu chuẩn để đảm bảo Telegram API tiếp nhận 100%
-EMOJI_DOWN  = "📥"
-EMOJI_WARN  = "⚠️"
-EMOJI_CROSS = "❌"
-EMOJI_CHECK = "✅"
-EMOJI_VIDEO = "🎥"
-EMOJI_STAR  = "⭐"
+# Khai báo Emoji Động (Custom Emoji) đúng cú pháp HTML
+EMOJI_DOWN  = '<tg-emoji emoji-id="5368324170671202286">📥</tg-emoji>'
+EMOJI_WARN  = '<tg-emoji emoji-id="5368324170671202291">⚠️</tg-emoji>'
+EMOJI_CROSS = '<tg-emoji emoji-id="5368324170671202292">❌</tg-emoji>'
+EMOJI_CHECK = '<tg-emoji emoji-id="5368324170671202289">✅</tg-emoji>'
+EMOJI_VIDEO = '<tg-emoji emoji-id="5368324170671202287">🎥</tg-emoji>'
+EMOJI_STAR  = '<tg-emoji emoji-id="5368324170671202290">⭐</tg-emoji>'
 
 # ==============================
 # 3. LỆNH /START
@@ -66,7 +66,6 @@ def downfb(message):
     chat_id = message.chat.id
     message_id = message.message_id
 
-    # LẤY LINK FACEBOOK
     parts = message.text.split(" ", 1)
     if len(parts) < 2 or not parts[1].strip():
         msg = (
@@ -79,7 +78,6 @@ def downfb(message):
 
     fb_url = parts[1].strip()
 
-    # GỌI API FACEBOOK
     api_url = (
         "https://silent-mud-7026.codeofsaladin.workers.dev/"
         "?url=" + requests.utils.quote(fb_url, safe="")
@@ -107,7 +105,6 @@ def downfb(message):
 
     data = data_json["result"]
 
-    # LẤY LINK VIDEO
     hd_url = data.get("hdUrl") or ""
     sd_url = data.get("sdUrl") or ""
     video_url = hd_url if hd_url else sd_url
@@ -116,11 +113,10 @@ def downfb(message):
         bot.send_message(chat_id, f"{EMOJI_CROSS} Không tìm thấy link video.")
         return
 
-    # DATA PROCESSED
     video_id = html.escape(str(data.get("id", "Không có")))
     content = html.escape(str(data.get("content", "")))
 
-    # CAPTION TRÌNH BÀY ĐẸP MẮT
+    # Caption chứa Emoji Động
     caption = (
         f"{EMOJI_DOWN} <b>FACEBOOK DOWNLOADER</b>\n"
         "┌───⭓\n"
@@ -132,7 +128,7 @@ def downfb(message):
         "<b>Chọn chất lượng bên dưới để tải.</b>"
     )
 
-    # INLINE KEYBOARD
+    # Nút bấm DÙNG EMOJI THƯỜNG (Telegram cấm Custom Emoji ở nút bấm)
     keyboard = types.InlineKeyboardMarkup()
     hd_button_url = hd_url if hd_url else sd_url
     sd_button_url = sd_url if sd_url else hd_url
@@ -142,7 +138,7 @@ def downfb(message):
         types.InlineKeyboardButton("🎥 Tải SD", url=sd_button_url)
     )
 
-    # DÙNG BỌC THỜI GIAN THỬ THỦ TỤC GỬI VIDEO
+    # Gửi video direct
     try:
         bot.send_video(
             chat_id,
@@ -153,19 +149,17 @@ def downfb(message):
             reply_markup=keyboard
         )
     except Exception as e:
-        # Tự động gửi tin nhắn kèm nút bấm nếu link video direct bị lỗi DOCUMENT_INVALID
-        print("Không thể gửi file video trực tiếp, fallback về tin nhắn văn bản:", e)
+        print("Không thể gửi video trực tiếp, chuyển sang gửi tin nhắn:", e)
         try:
             bot.send_message(chat_id, caption, parse_mode="HTML", reply_markup=keyboard)
         except Exception as send_error:
             print("Gửi tin nhắn thất bại:", send_error)
 
-    # XÓA LỆNH NGƯỜI DÙNG
+    # Xóa tin nhắn lệnh gốc
     try:
         bot.delete_message(chat_id, message_id)
     except Exception as e:
         print("Không thể xóa message:", e)
-
 
 # ==============================
 # 5. CHẠY CHƯƠNG TRÌNH
@@ -173,9 +167,14 @@ def downfb(message):
 if __name__ == "__main__":
     keep_alive()
 
+    try:
+        bot.remove_webhook()
+    except Exception:
+        pass
+
     print("🤖 Bot đang chạy trên Server Render 24/7...")
     bot.infinity_polling(
         skip_pending=True,
-        timeout=60,
-        long_polling_timeout=60
+        timeout=30,
+        long_polling_timeout=30
     )
