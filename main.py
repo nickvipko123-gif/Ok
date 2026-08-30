@@ -184,10 +184,11 @@ def downfb(message):
 if __name__ == "__main__":
     keep_alive()
 
+    # Dọn sạch Webhook và request bị treo trước khi Polling
     try:
         bot.delete_webhook(drop_pending_updates=True)
-    except Exception:
-        pass
+    except Exception as e:
+        print("Lỗi xóa webhook:", e)
 
     print("🤖 Bot đang chạy trên Server Render 24/7...")
     bot.infinity_polling(
