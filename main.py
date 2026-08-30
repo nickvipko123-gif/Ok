@@ -7,7 +7,7 @@ from telebot import types
 from flask import Flask
 
 # ==============================
-# 1. TẠO WEB SERVER KEEP-ALIVE TRÊN RENDER
+# 1. KEEP-ALIVE SERVER
 # ==============================
 app = Flask('')
 
@@ -25,18 +25,42 @@ def keep_alive():
     t.start()
 
 # ==============================
-# 2. CẤU HÌNH BOT & EMOJI ĐỘNG PREMIUM
+# 2. CẤU HÌNH BOT & EMOJI PREMIUM
 # ==============================
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "8906024187:AAGf_VqH8JGuJWZPRei5kYuuqzo86CkjuJQ")
 bot = telebot.TeleBot(BOT_TOKEN, parse_mode="HTML")
 
-# Khai báo Emoji Động (Custom Emoji) đúng cú pháp HTML
-EMOJI_DOWN  = '<tg-emoji emoji-id="5368324170671202286">📥</tg-emoji>'
-EMOJI_WARN  = '<tg-emoji emoji-id="5368324170671202291">⚠️</tg-emoji>'
-EMOJI_CROSS = '<tg-emoji emoji-id="5368324170671202292">❌</tg-emoji>'
-EMOJI_CHECK = '<tg-emoji emoji-id="5368324170671202289">✅</tg-emoji>'
-EMOJI_VIDEO = '<tg-emoji emoji-id="5368324170671202287">🎥</tg-emoji>'
-EMOJI_STAR  = '<tg-emoji emoji-id="5368324170671202290">⭐</tg-emoji>'
+# HÀM TẠO EMOJI PREMIUM AN TOÀN
+def get_premium_emoji(emoji_id, fallback_emoji):
+    if emoji_id and emoji_id.strip():
+        return f'<tg-emoji emoji-id="{emoji_id.strip()}">{fallback_emoji}</tg-emoji>'
+    return fallback_emoji
+
+# ⚠️ THAY CHUỖI SỐ BÊN DƯỚI BẰNG CUSTOM_EMOJI_ID BẠN LẤY ĐƯỢC TỪ @getidsbot
+# Nếu chưa có ID thì cứ để rỗng "" nó sẽ dùng Emoji tiêu chuẩn!
+EMOJI_DOWN  = get_premium_emoji("5443127283898405358", "📥")
+EMOJI_WARN  = get_premium_emoji("5447644880824181073", "⚠️")
+EMOJI_CROSS = get_premium_emoji("5210952531676504517", "❌")
+EMOJI_CHECK = get_premium_emoji("6132058351917344923", "✅")
+EMOJI_VIDEO = get_premium_emoji("5231012545799666522", "🔍")
+EMOJI_STAR  = get_premium_emoji("6244569929383679631", "⭐")
+
+# HÀM GỬI TIN NHẮN AN TOÀN (NẾU DÍNH LỖI EMOJI SẼ TỰ CHUYỂN VỀ TEXT THƯỜNG)
+def safe_send_message(chat_id, text, reply_to_id=None, reply_markup=None):
+    try:
+        if reply_to_id:
+            return bot.send_message(chat_id, text, reply_to_message_id=reply_to_id, reply_markup=reply_markup)
+        return bot.send_message(chat_id, text, reply_markup=reply_markup)
+    except Exception as e:
+        if "DOCUMENT_INVALID" in str(e) or "BUTTON_TYPE_INVALID" in str(e):
+            # Tự động lọc sạch thẻ <tg-emoji> nếu ID bị hỏng
+            clean_text = html.unescape(text)
+            import re
+            clean_text = re.sub(r'<tg-emoji[^>]*>(.*?)</tg-emoji>', r'\1', clean_text)
+            if reply_to_id:
+                return bot.send_message(chat_id, clean_text, reply_to_message_id=reply_to_id, reply_markup=reply_markup)
+            return bot.send_message(chat_id, clean_text, reply_markup=reply_markup)
+        raise e
 
 # ==============================
 # 3. LỆNH /START
@@ -56,7 +80,7 @@ def start_command(message):
         "<code>─────────────────────────</code>\n"
         "✨ <i>Chúc bạn có trải nghiệm tuyệt vời!</i>"
     )
-    bot.reply_to(message, welcome_msg, parse_mode="HTML")
+    safe_send_message(message.chat.id, welcome_msg, reply_to_id=message.message_id)
 
 # ==============================
 # 4. LỆNH /DOWNFB
@@ -73,7 +97,7 @@ def downfb(message):
             "Ví dụ:\n"
             "<code>/downfb https://facebook.com/...</code>"
         )
-        bot.reply_to(message, msg)
+        safe_send_message(chat_id, msg, reply_to_id=message_id)
         return
 
     fb_url = parts[1].strip()
@@ -86,21 +110,21 @@ def downfb(message):
     try:
         response = requests.get(api_url, timeout=30)
     except requests.RequestException:
-        bot.send_message(chat_id, f"{EMOJI_CROSS} Không thể kết nối API.")
+        safe_send_message(chat_id, f"{EMOJI_CROSS} Không thể kết nối API.")
         return
 
     if response.status_code != 200:
-        bot.send_message(chat_id, f"{EMOJI_CROSS} Không thể kết nối API.")
+        safe_send_message(chat_id, f"{EMOJI_CROSS} Không thể kết nối API.")
         return
 
     try:
         data_json = response.json()
     except ValueError:
-        bot.send_message(chat_id, f"{EMOJI_CROSS} API trả về dữ liệu không hợp lệ.")
+        safe_send_message(chat_id, f"{EMOJI_CROSS} API trả về dữ liệu không hợp lệ.")
         return
 
     if not data_json.get("success") or not data_json.get("result"):
-        bot.send_message(chat_id, f"{EMOJI_CROSS} Không tìm thấy video.")
+        safe_send_message(chat_id, f"{EMOJI_CROSS} Không tìm thấy video.")
         return
 
     data = data_json["result"]
@@ -110,13 +134,12 @@ def downfb(message):
     video_url = hd_url if hd_url else sd_url
 
     if not video_url:
-        bot.send_message(chat_id, f"{EMOJI_CROSS} Không tìm thấy link video.")
+        safe_send_message(chat_id, f"{EMOJI_CROSS} Không tìm thấy link video.")
         return
 
     video_id = html.escape(str(data.get("id", "Không có")))
     content = html.escape(str(data.get("content", "")))
 
-    # Caption chứa Emoji Động
     caption = (
         f"{EMOJI_DOWN} <b>FACEBOOK DOWNLOADER</b>\n"
         "┌───⭓\n"
@@ -128,7 +151,7 @@ def downfb(message):
         "<b>Chọn chất lượng bên dưới để tải.</b>"
     )
 
-    # Nút bấm DÙNG EMOJI THƯỜNG (Telegram cấm Custom Emoji ở nút bấm)
+    # Nút bấm bắt buộc chỉ dùng Emoji Unicode tiêu chuẩn (Telegram cấm Emoji Premium trong InlineButton)
     keyboard = types.InlineKeyboardMarkup()
     hd_button_url = hd_url if hd_url else sd_url
     sd_button_url = sd_url if sd_url else hd_url
@@ -138,7 +161,6 @@ def downfb(message):
         types.InlineKeyboardButton("🎥 Tải SD", url=sd_button_url)
     )
 
-    # Gửi video direct
     try:
         bot.send_video(
             chat_id,
@@ -149,17 +171,12 @@ def downfb(message):
             reply_markup=keyboard
         )
     except Exception as e:
-        print("Không thể gửi video trực tiếp, chuyển sang gửi tin nhắn:", e)
-        try:
-            bot.send_message(chat_id, caption, parse_mode="HTML", reply_markup=keyboard)
-        except Exception as send_error:
-            print("Gửi tin nhắn thất bại:", send_error)
+        safe_send_message(chat_id, caption, reply_markup=keyboard)
 
-    # Xóa tin nhắn lệnh gốc
     try:
         bot.delete_message(chat_id, message_id)
-    except Exception as e:
-        print("Không thể xóa message:", e)
+    except Exception:
+        pass
 
 # ==============================
 # 5. CHẠY CHƯƠNG TRÌNH
@@ -168,7 +185,7 @@ if __name__ == "__main__":
     keep_alive()
 
     try:
-        bot.remove_webhook()
+        bot.delete_webhook(drop_pending_updates=True)
     except Exception:
         pass
 
