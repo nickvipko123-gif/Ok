@@ -25,21 +25,21 @@ def keep_alive():
     t.start()
 
 # ==============================
-# 2. CẤU HÌNH BOT & MÃ EMOJI PREMIUM
+# 2. CẤU HÌNH BOT & EMOJI CHUẨN
 # ==============================
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "8906024187:AAHu8y2bf8WaZ55twhJz7rWld-jaolN3rgk")
 bot = telebot.TeleBot(BOT_TOKEN, parse_mode="HTML")
 
-# Khai báo các ID Custom Emoji Premium
-EMOJI_DOWN  = '<tg-emoji emoji-id="5368324170671202286">📥</tg-emoji>'
-EMOJI_WARN  = '<tg-emoji emoji-id="5368324170671202291">⚠️</tg-emoji>'
-EMOJI_CROSS = '<tg-emoji emoji-id="5368324170671202292">❌</tg-emoji>'
-EMOJI_CHECK = '<tg-emoji emoji-id="5368324170671202289">✅</tg-emoji>'
-EMOJI_VIDEO = '<tg-emoji emoji-id="5368324170671202287">🎥</tg-emoji>'
-EMOJI_STAR  = '<tg-emoji emoji-id="5368324170671202290">⭐</tg-emoji>'
+# Dùng Emoji tiêu chuẩn để đảm bảo Telegram API tiếp nhận 100%
+EMOJI_DOWN  = "📥"
+EMOJI_WARN  = "⚠️"
+EMOJI_CROSS = "❌"
+EMOJI_CHECK = "✅"
+EMOJI_VIDEO = "🎥"
+EMOJI_STAR  = "⭐"
 
 # ==============================
-# 3. LỆNH /START (BỔ SUNG MỚI)
+# 3. LỆNH /START
 # ==============================
 @bot.message_handler(commands=["start"])
 def start_command(message):
@@ -142,37 +142,23 @@ def downfb(message):
         types.InlineKeyboardButton("🎥 Tải SD", url=sd_button_url)
     )
 
-    # KIỂM TRA DUNG LƯỢNG VIDEO
-    size = 0
+    # DÙNG BỌC THỜI GIAN THỬ THỦ TỤC GỬI VIDEO
     try:
-        head = requests.head(video_url, allow_redirects=True, timeout=15)
-        content_length = head.headers.get("Content-Length")
-        if content_length:
-            size = int(content_length)
-    except Exception:
-        size = 0
-
-    MAX_SIZE = 50 * 1024 * 1024  # 50 MB (Giới hạn Telegram Bot)
-
-    # GỬI VIDEO HOẶC TIN NHẮN TẢI
-    if size > MAX_SIZE:
-        bot.send_message(chat_id, caption, parse_mode="HTML", reply_markup=keyboard)
-    else:
+        bot.send_video(
+            chat_id,
+            video_url,
+            caption=caption,
+            parse_mode="HTML",
+            supports_streaming=True,
+            reply_markup=keyboard
+        )
+    except Exception as e:
+        # Tự động gửi tin nhắn kèm nút bấm nếu link video direct bị lỗi DOCUMENT_INVALID
+        print("Không thể gửi file video trực tiếp, fallback về tin nhắn văn bản:", e)
         try:
-            bot.send_video(
-                chat_id,
-                video_url,
-                caption=caption,
-                parse_mode="HTML",
-                supports_streaming=True,
-                reply_markup=keyboard
-            )
-        except Exception as e:
-            print("send_video error:", e)
-            try:
-                bot.send_message(chat_id, caption, parse_mode="HTML", reply_markup=keyboard)
-            except Exception as send_error:
-                print("send_message error:", send_error)
+            bot.send_message(chat_id, caption, parse_mode="HTML", reply_markup=keyboard)
+        except Exception as send_error:
+            print("Gửi tin nhắn thất bại:", send_error)
 
     # XÓA LỆNH NGƯỜI DÙNG
     try:
@@ -185,7 +171,6 @@ def downfb(message):
 # 5. CHẠY CHƯƠNG TRÌNH
 # ==============================
 if __name__ == "__main__":
-    # Khởi chạy Web Server ngầm cho Render
     keep_alive()
 
     print("🤖 Bot đang chạy trên Server Render 24/7...")
