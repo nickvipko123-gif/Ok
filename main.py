@@ -20,18 +20,33 @@ def get_premium_emoji(emoji_id, fallback_emoji):
         return f'<tg-emoji emoji-id="{emoji_id.strip()}">{fallback_emoji}</tg-emoji>'
     return fallback_emoji
 
-# DANH SÁCH EMOJI ĐỘNG TOÀN BỘ HỆ THỐNG
-EMOJI_SHOP   = get_premium_emoji("5312361253610475399", "🛒")
-EMOJI_FILE   = get_premium_emoji("5345987742276797245", "📁")
-EMOJI_BANK   = get_premium_emoji("5445353829304387411", "💳")
-EMOJI_USER   = get_premium_emoji("6132058351917344923", "👤")
-EMOJI_CHECK  = get_premium_emoji("5262832270573582269", "✅")
-EMOJI_CROSS  = get_premium_emoji("5210952531676504517", "❌")
-EMOJI_WARN   = get_premium_emoji("6132153107485827049", "⚠️")
-EMOJI_DOWN   = get_premium_emoji("5443127283898405358", "📥")
-EMOJI_MONEY  = get_premium_emoji("5224257782013769471", "💰")
-EMOJI_ADMIN  = get_premium_emoji("5231012545799666522", "🛠️")
-EMOJI_CART   = get_premium_emoji("5443127283898405358", "📦")
+# ==============================
+# DANH SÁCH EMOJI 
+# (Tách riêng RAW cho nút bấm, EMOJI cho văn bản)
+# ==============================
+RAW_SHOP  = "🛒"
+RAW_FILE  = "📁"
+RAW_BANK  = "💳"
+RAW_USER  = "👤"
+RAW_CHECK = "✅"
+RAW_CROSS = "❌"
+RAW_WARN  = "⚠️"
+RAW_DOWN  = "📥"
+RAW_MONEY = "💰"
+RAW_ADMIN = "🛠️"
+RAW_CART  = "📦"
+
+EMOJI_SHOP   = get_premium_emoji("5312361253610475399", RAW_SHOP)
+EMOJI_FILE   = get_premium_emoji("5345987742276797245", RAW_FILE)
+EMOJI_BANK   = get_premium_emoji("5445353829304387411", RAW_BANK)
+EMOJI_USER   = get_premium_emoji("6132058351917344923", RAW_USER)
+EMOJI_CHECK  = get_premium_emoji("5262832270573582269", RAW_CHECK)
+EMOJI_CROSS  = get_premium_emoji("5210952531676504517", RAW_CROSS)
+EMOJI_WARN   = get_premium_emoji("6132153107485827049", RAW_WARN)
+EMOJI_DOWN   = get_premium_emoji("5443127283898405358", RAW_DOWN)
+EMOJI_MONEY  = get_premium_emoji("5224257782013769471", RAW_MONEY)
+EMOJI_ADMIN  = get_premium_emoji("5231012545799666522", RAW_ADMIN)
+EMOJI_CART   = get_premium_emoji("5443127283898405358", RAW_CART)
 
 # HÀM GỬI TIN NHẮN AN TOÀN (TỰ ĐỘNG FIX LỖI EMOJI / PARSE MODE)
 def safe_send_message(chat_id, text, reply_to_id=None, reply_markup=None):
@@ -40,7 +55,7 @@ def safe_send_message(chat_id, text, reply_to_id=None, reply_markup=None):
             return bot.send_message(chat_id, text, reply_to_message_id=reply_to_id, reply_markup=reply_markup)
         return bot.send_message(chat_id, text, reply_markup=reply_markup)
     except Exception as e:
-        if "DOCUMENT_INVALID" in str(e) or "BUTTON_TYPE_INVALID" in str(e) or "PEER_ID_INVALID" in str(e):
+        if "DOCUMENT_INVALID" in str(e) or "BUTTON_TYPE_INVALID" in str(e) or "PEER_ID_INVALID" in str(e) or "parse" in str(e).lower():
             clean_text = html.unescape(text)
             clean_text = re.sub(r'<tg-emoji[^>]*>(.*?)</tg-emoji>', r'\1', clean_text)
             if reply_to_id:
@@ -58,7 +73,7 @@ products_db = {
 }
 files_db = []  # Lưu danh sách file hệ thống quản lý
 
-# Lưu trạng thái tạm thời của Admin khi đang thao tác (ví dụ: đang nhập tên/giá sản phẩm mới)
+# Lưu trạng thái tạm thời của Admin khi đang thao tác
 admin_states = {}
 
 # ==============================
@@ -76,15 +91,15 @@ def send_welcome(message):
         }
 
     markup = types.InlineKeyboardMarkup(row_width=2)
-    btn_shop = types.InlineKeyboardButton(f"{EMOJI_SHOP} Mua Mã Nguồn", callback_data="menu_shop")
-    btn_file = types.InlineKeyboardButton(f"{EMOJI_FILE} Kho File & Tài Liệu", callback_data="menu_files")
-    btn_bank = types.InlineKeyboardButton(f"{EMOJI_BANK} Nạp Tiền Bank", callback_data="menu_bank")
-    btn_info = types.InlineKeyboardButton(f"{EMOJI_USER} Tài Khoản Cá Nhân", callback_data="menu_info")
+    btn_shop = types.InlineKeyboardButton(f"{RAW_SHOP} Mua Mã Nguồn", callback_data="menu_shop")
+    btn_file = types.InlineKeyboardButton(f"{RAW_FILE} Kho File & Tài Liệu", callback_data="menu_files")
+    btn_bank = types.InlineKeyboardButton(f"{RAW_BANK} Nạp Tiền Bank", callback_data="menu_bank")
+    btn_info = types.InlineKeyboardButton(f"{RAW_USER} Tài Khoản Cá Nhân", callback_data="menu_info")
     markup.add(btn_shop, btn_file, btn_bank, btn_info)
 
     # Nếu là Admin thì hiển thị thêm nút Quản Trị Hệ Thống ngay bảng điều khiển chính
     if chat_id in ADMIN_IDS:
-        btn_admin = types.InlineKeyboardButton(f"{EMOJI_ADMIN} 👑 Bảng Điều Khiển Admin", callback_data="admin_panel")
+        btn_admin = types.InlineKeyboardButton(f"{RAW_ADMIN} 👑 Bảng Điều Khiển Admin", callback_data="admin_panel")
         markup.add(btn_admin)
 
     text = (
@@ -105,10 +120,10 @@ def handle_callback(call):
         markup = types.InlineKeyboardMarkup(row_width=1)
         for p_id, prod in products_db.items():
             markup.add(types.InlineKeyboardButton(
-                f"{EMOJI_CART} {prod['name']} — {prod['price']:,} VNĐ", 
+                f"{RAW_CART} {prod['name']} — {prod['price']:,} VNĐ", 
                 callback_data=f"buy_{p_id}"
             ))
-        markup.add(types.InlineKeyboardButton(f"{EMOJI_CROSS} Quay lại", callback_data="back_home"))
+        markup.add(types.InlineKeyboardButton(f"{RAW_CROSS} Quay lại", callback_data="back_home"))
         
         text = f"{EMOJI_SHOP} <b>DANH MỤC MÃ NGUỒN HIỆN CÓ</b>\n\nChọn mã nguồn bạn muốn mua bên dưới:"
         bot.edit_message_text(text, chat_id, call.message.message_id, reply_markup=markup, parse_mode="HTML")
@@ -139,8 +154,8 @@ def handle_callback(call):
                     f"{EMOJI_WARN} Vui lòng nạp thêm tiền qua ngân hàng để tiếp tục mua hàng."
                 )
             markup = types.InlineKeyboardMarkup()
-            markup.add(types.InlineKeyboardButton(f"{EMOJI_BANK} Nạp Tiền Ngay", callback_data="menu_bank"))
-            markup.add(types.InlineKeyboardButton(f"{EMOJI_CROSS} Quay lại cửa hàng", callback_data="menu_shop"))
+            markup.add(types.InlineKeyboardButton(f"{RAW_BANK} Nạp Tiền Ngay", callback_data="menu_bank"))
+            markup.add(types.InlineKeyboardButton(f"{RAW_CROSS} Quay lại cửa hàng", callback_data="menu_shop"))
             bot.edit_message_text(text, chat_id, call.message.message_id, reply_markup=markup, parse_mode="HTML")
 
     # 3. NẠP TIỀN QUA NGÂN HÀNG
@@ -155,8 +170,8 @@ def handle_callback(call):
             f"{EMOJI_WARN} Sau khi chuyển khoản xong, bấm vào nút bên dưới để báo cáo giao dịch cho hệ thống xét duyệt."
         )
         markup = types.InlineKeyboardMarkup()
-        markup.add(types.InlineKeyboardButton(f"{EMOJI_CHECK} Đã chuyển khoản, Xác Nhận Ngay", callback_data="confirm_bank"))
-        markup.add(types.InlineKeyboardButton(f"{EMOJI_CROSS} Quay lại", callback_data="back_home"))
+        markup.add(types.InlineKeyboardButton(f"{RAW_CHECK} Đã chuyển khoản, Xác Nhận Ngay", callback_data="confirm_bank"))
+        markup.add(types.InlineKeyboardButton(f"{RAW_CROSS} Quay lại", callback_data="back_home"))
         bot.edit_message_text(text, chat_id, call.message.message_id, reply_markup=markup, parse_mode="HTML")
 
     elif data == "confirm_bank":
@@ -171,10 +186,10 @@ def handle_callback(call):
         )
         admin_markup = types.InlineKeyboardMarkup(row_width=2)
         admin_markup.add(
-            types.InlineKeyboardButton(f"{EMOJI_CHECK} Cộng 50k", callback_data=f"approve_{chat_id}_50000"),
-            types.InlineKeyboardButton(f"{EMOJI_CHECK} Cộng 100k", callback_data=f"approve_{chat_id}_100000"),
-            types.InlineKeyboardButton(f"{EMOJI_CHECK} Cộng 200k", callback_data=f"approve_{chat_id}_200000"),
-            types.InlineKeyboardButton(f"{EMOJI_CROSS} Từ chối", callback_data=f"reject_{chat_id}")
+            types.InlineKeyboardButton(f"{RAW_CHECK} Cộng 50k", callback_data=f"approve_{chat_id}_50000"),
+            types.InlineKeyboardButton(f"{RAW_CHECK} Cộng 100k", callback_data=f"approve_{chat_id}_100000"),
+            types.InlineKeyboardButton(f"{RAW_CHECK} Cộng 200k", callback_data=f"approve_{chat_id}_200000"),
+            types.InlineKeyboardButton(f"{RAW_CROSS} Từ chối", callback_data=f"reject_{chat_id}")
         )
         
         for admin_id in ADMIN_IDS:
@@ -188,7 +203,7 @@ def handle_callback(call):
             f"Hệ thống đã chuyển thông tin chuyển khoản của bạn tới Quản trị viên. Số dư sẽ được cập nhật trong 1-3 phút."
         )
         markup = types.InlineKeyboardMarkup()
-        markup.add(types.InlineKeyboardButton(f"{EMOJI_CROSS} Quay lại", callback_data="back_home"))
+        markup.add(types.InlineKeyboardButton(f"{RAW_CROSS} Quay lại", callback_data="back_home"))
         bot.edit_message_text(text, chat_id, call.message.message_id, reply_markup=markup, parse_mode="HTML")
 
     # 4. ADMIN DUYỆT TIỀN CHO KHÁCH
@@ -229,7 +244,7 @@ def handle_callback(call):
             f"• Số dư hiện tại: {EMOJI_MONEY} <b>{user_data['balance']:,} VNĐ</b>"
         )
         markup = types.InlineKeyboardMarkup()
-        markup.add(types.InlineKeyboardButton(f"{EMOJI_CROSS} Quay lại", callback_data="back_home"))
+        markup.add(types.InlineKeyboardButton(f"{RAW_CROSS} Quay lại", callback_data="back_home"))
         bot.edit_message_text(text, chat_id, call.message.message_id, reply_markup=markup, parse_mode="HTML")
 
     # 6. QUẢN LÝ FILE HỆ THỐNG
@@ -247,7 +262,7 @@ def handle_callback(call):
             f"💡 <i>Gửi trực tiếp file tài liệu hoặc source code vào đoạn chat này để upload lên kho lưu trữ tự động.</i>"
         )
         markup = types.InlineKeyboardMarkup()
-        markup.add(types.InlineKeyboardButton(f"{EMOJI_CROSS} Quay lại", callback_data="back_home"))
+        markup.add(types.InlineKeyboardButton(f"{RAW_CROSS} Quay lại", callback_data="back_home"))
         bot.edit_message_text(text, chat_id, call.message.message_id, reply_markup=markup, parse_mode="HTML")
 
     # 7. BẢNG ĐIỀU KHIỂN ADMIN PANEL
@@ -259,9 +274,9 @@ def handle_callback(call):
             f"Quản lý mã nguồn, thêm sản phẩm mới hoặc xem thống kê doanh thu:"
         )
         markup = types.InlineKeyboardMarkup(row_width=1)
-        markup.add(types.InlineKeyboardButton(f"{EMOJI_SHOP} Quản lý sản phẩm mã nguồn", callback_data="admin_manage_products"))
-        markup.add(types.InlineKeyboardButton(f"{EMOJI_FILE} Xem danh sách file hệ thống", callback_data="admin_manage_files"))
-        markup.add(types.InlineKeyboardButton(f"{EMOJI_CROSS} Về trang chủ", callback_data="back_home"))
+        markup.add(types.InlineKeyboardButton(f"{RAW_SHOP} Quản lý sản phẩm mã nguồn", callback_data="admin_manage_products"))
+        markup.add(types.InlineKeyboardButton(f"{RAW_FILE} Xem danh sách file hệ thống", callback_data="admin_manage_files"))
+        markup.add(types.InlineKeyboardButton(f"{RAW_CROSS} Về trang chủ", callback_data="back_home"))
         bot.edit_message_text(text, chat_id, call.message.message_id, reply_markup=markup, parse_mode="HTML")
 
     elif data == "admin_manage_products":
@@ -271,7 +286,7 @@ def handle_callback(call):
         markup = types.InlineKeyboardMarkup(row_width=1)
         for p_id, prod in products_db.items():
             markup.add(types.InlineKeyboardButton(f"⚙️ {prod['name']} ({prod['price']:,}đ)", callback_data=f"admin_edit_{p_id}"))
-        markup.add(types.InlineKeyboardButton(f"{EMOJI_CROSS} Quay lại Admin Panel", callback_data="admin_panel"))
+        markup.add(types.InlineKeyboardButton(f"{RAW_CROSS} Quay lại Admin Panel", callback_data="admin_panel"))
         bot.edit_message_text(text, chat_id, call.message.message_id, reply_markup=markup, parse_mode="HTML")
 
     elif data == "admin_manage_files":
@@ -279,20 +294,20 @@ def handle_callback(call):
             return
         text = f"{EMOJI_FILE} <b>KHO FILE TRÊN HỆ THỐNG ({len(files_db)} file)</b>\n\nTất cả file khách hoặc admin tải lên đều hiển thị ở đây."
         markup = types.InlineKeyboardMarkup()
-        markup.add(types.InlineKeyboardButton(f"{EMOJI_CROSS} Quay lại Admin Panel", callback_data="admin_panel"))
+        markup.add(types.InlineKeyboardButton(f"{RAW_CROSS} Quay lại Admin Panel", callback_data="admin_panel"))
         bot.edit_message_text(text, chat_id, call.message.message_id, reply_markup=markup, parse_mode="HTML")
 
     # 8. QUAY LẠI TRANG CHỦ
     elif data == "back_home":
         markup = types.InlineKeyboardMarkup(row_width=2)
-        btn_shop = types.InlineKeyboardButton(f"{EMOJI_SHOP} Mua Mã Nguồn", callback_data="menu_shop")
-        btn_file = types.InlineKeyboardButton(f"{EMOJI_FILE} Kho File & Tài Liệu", callback_data="menu_files")
-        btn_bank = types.InlineKeyboardButton(f"{EMOJI_BANK} Nạp Tiền Bank", callback_data="menu_bank")
-        btn_info = types.InlineKeyboardButton(f"{EMOJI_USER} Tài Khoản Cá Nhân", callback_data="menu_info")
+        btn_shop = types.InlineKeyboardButton(f"{RAW_SHOP} Mua Mã Nguồn", callback_data="menu_shop")
+        btn_file = types.InlineKeyboardButton(f"{RAW_FILE} Kho File & Tài Liệu", callback_data="menu_files")
+        btn_bank = types.InlineKeyboardButton(f"{RAW_BANK} Nạp Tiền Bank", callback_data="menu_bank")
+        btn_info = types.InlineKeyboardButton(f"{RAW_USER} Tài Khoản Cá Nhân", callback_data="menu_info")
         markup.add(btn_shop, btn_file, btn_bank, btn_info)
         
         if chat_id in ADMIN_IDS:
-            markup.add(types.InlineKeyboardButton(f"{EMOJI_ADMIN} 👑 Bảng Điều Khiển Admin", callback_data="admin_panel"))
+            markup.add(types.InlineKeyboardButton(f"{RAW_ADMIN} 👑 Bảng Điều Khiển Admin", callback_data="admin_panel"))
 
         text = (
             f"{EMOJI_SHOP} <b>HỆ THỐNG BÁN MÃ NGUỒN & QUẢN LÝ TỰ ĐỘNG</b>\n\n"
@@ -344,7 +359,7 @@ def webhook():
 
 @app.route('/')
 def index():
-    return f"{EMOJI_CHECK} Bot is running live 24/7 on Render!", 200
+    return f"{RAW_CHECK} Bot is running live 24/7 on Render!", 200
 
 if __name__ == "__main__":
     PORT = int(os.environ.get('PORT', 5000))
